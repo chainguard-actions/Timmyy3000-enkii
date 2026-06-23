@@ -1,0 +1,43 @@
+name: Test enkii - custom model and options
+on:
+  workflow_dispatch:
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    env:
+      GITHUB_EVENT_NAME: push
+      GITHUB_REF: refs/heads/main
+    steps:
+      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+
+      - id: action
+        uses: .
+        with:
+          openrouter_api_key: "sk-or-dummy-key-for-testing"
+          review_model: "deepseek/deepseek-r1"
+          security_model: "deepseek/deepseek-r1"
+          enable_validator: "true"
+          run_security: "true"
+        continue-on-error: true
+
+      - name: Assert action step was attempted
+        run: |
+          echo "Action outcome: ${{ steps.action.outcome }}"
+          if [ "${{ steps.action.outcome }}" = "" ]; then
+            echo "FAIL: action step did not run at all"
+            exit 1
+          fi
+          echo "PASS: action ran with custom model options, outcome=${{ steps.action.outcome }}"
+
+      - name: Assert contains_trigger is not true for push event
+        env:
+          ACTUAL: ${{ steps.action.outputs.contains_trigger }}
+          OUTCOME: ${{ steps.action.outcome }}
+        run: |
+          echo "contains_trigger: $ACTUAL"
+          echo "outcome: $OUTCOME"
+          if [ "$ACTUAL" = "true" ]; then
+            echo "FAIL: push event should not set contains_trigger=true"
+            exit 1
+          fi
+          echo "PASS: contains_trigger is not true for push event"

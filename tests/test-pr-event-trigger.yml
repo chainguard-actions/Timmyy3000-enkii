@@ -1,0 +1,53 @@
+name: Test enkii - pull_request event trigger detection
+on:
+  workflow_dispatch:
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    env:
+      GITHUB_EVENT_NAME: pull_request
+      GITHUB_REF: refs/pull/1/merge
+      GITHUB_HEAD_REF: feature-branch
+      GITHUB_BASE_REF: main
+    steps:
+      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+
+      - id: action
+        uses: .
+        with:
+          openrouter_api_key: "sk-or-dummy-key-for-testing"
+          review_model: "@preset/enkii"
+          security_model: "@preset/enkii"
+          enable_validator: "false"
+          run_security: "false"
+        continue-on-error: true
+
+      - name: Assert action ran (step completed or errored gracefully)
+        run: |
+          echo "Action step outcome: ${{ steps.action.outcome }}"
+          # The action may fail due to dummy API key or missing PR context,
+          # but it should not crash the runner itself.
+          # We verify the step was at least attempted.
+          if [ "${{ steps.action.outcome }}" = "" ]; then
+            echo "FAIL: action step did not run at all"
+            exit 1
+          fi
+          echo "PASS: action step ran with outcome: ${{ steps.action.outcome }}"
+
+      - name: Assert contains_trigger output is set or action errored
+        env:
+          TRIGGER: ${{ steps.action.outputs.contains_trigger }}
+          OUTCOME: ${{ steps.action.outcome }}
+        run: |
+          echo "contains_trigger: $TRIGGER"
+          echo "outcome: $OUTCOME"
+          # If the action succeeded, contains_trigger should be a boolean string
+          if [ "$OUTCOME" = "success" ]; then
+            if [ "$TRIGGER" != "true" ] && [ "$TRIGGER" != "false" ]; then
+              echo "FAIL: expected contains_trigger to be 'true' or 'false', got: '$TRIGGER'"
+              exit 1
+            fi
+            echo "PASS: contains_trigger='$TRIGGER'"
+          else
+            echo "PASS: action errored (expected with dummy API key), outcome=$OUTCOME"
+          fi

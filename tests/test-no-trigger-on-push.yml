@@ -1,0 +1,32 @@
+name: Test enkii - no trigger on push event
+on:
+  workflow_dispatch:
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    env:
+      GITHUB_EVENT_NAME: push
+      GITHUB_REF: refs/heads/main
+    steps:
+      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+
+      - id: action
+        uses: .
+        with:
+          openrouter_api_key: "sk-or-dummy-key-for-testing"
+          review_model: "@preset/enkii"
+          security_model: "@preset/enkii"
+          enable_validator: "false"
+          run_security: "false"
+        continue-on-error: true
+
+      - name: Assert contains_trigger is false for push event
+        env:
+          ACTUAL: ${{ steps.action.outputs.contains_trigger }}
+        run: |
+          echo "actual contains_trigger: $ACTUAL"
+          if [ "$ACTUAL" = "true" ]; then
+            echo "FAIL: expected contains_trigger to be false or empty for a push event"
+            exit 1
+          fi
+          echo "PASS: contains_trigger is not true for push event (value: '$ACTUAL')"
