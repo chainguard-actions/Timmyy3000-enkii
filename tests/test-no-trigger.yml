@@ -1,0 +1,49 @@
+name: Test no-trigger on workflow_dispatch
+on:
+  workflow_dispatch:
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+
+      - id: action
+        uses: .
+        with:
+          openrouter_api_key: "fake-api-key-for-testing"
+        env:
+          GITHUB_EVENT_NAME: workflow_dispatch
+          OVERRIDE_GITHUB_TOKEN: ${{ github.token }}
+
+      - name: Assert contains_trigger is false
+        env:
+          ACTUAL: ${{ steps.action.outputs.contains_trigger }}
+        run: |
+          echo "actual: $ACTUAL"
+          if [ "$ACTUAL" != "false" ]; then
+            echo "FAIL: expected contains_trigger to be 'false' for workflow_dispatch event, got '$ACTUAL'"
+            exit 1
+          fi
+          echo "PASS: contains_trigger is false as expected for non-PR event"
+
+      - name: Assert code_review_id is empty
+        env:
+          ACTUAL: ${{ steps.action.outputs.code_review_id }}
+        run: |
+          echo "actual: '$ACTUAL'"
+          if [ -n "$ACTUAL" ]; then
+            echo "FAIL: expected code_review_id to be empty, got '$ACTUAL'"
+            exit 1
+          fi
+          echo "PASS: code_review_id is empty as expected"
+
+      - name: Assert security_review_id is empty
+        env:
+          ACTUAL: ${{ steps.action.outputs.security_review_id }}
+        run: |
+          echo "actual: '$ACTUAL'"
+          if [ -n "$ACTUAL" ]; then
+            echo "FAIL: expected security_review_id to be empty, got '$ACTUAL'"
+            exit 1
+          fi
+          echo "PASS: security_review_id is empty as expected"
