@@ -1,0 +1,28 @@
+name: Test no trigger on schedule event
+on:
+  workflow_dispatch:
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    env:
+      GITHUB_EVENT_NAME: schedule
+      GITHUB_REF: refs/heads/main
+    steps:
+      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+
+      - id: action
+        uses: .
+        with:
+          openrouter_api_key: "sk-or-test-fake-key-for-schedule-scenario"
+          run_security: "false"
+
+      - name: Assert contains_trigger is false for schedule event
+        env:
+          ACTUAL: ${{ steps.action.outputs.contains_trigger }}
+        run: |
+          echo "actual contains_trigger: $ACTUAL"
+          if [ "$ACTUAL" != "false" ]; then
+            echo "FAIL: expected contains_trigger='false' for schedule event but got '$ACTUAL'"
+            exit 1
+          fi
+          echo "PASS: contains_trigger is false as expected for schedule event"
