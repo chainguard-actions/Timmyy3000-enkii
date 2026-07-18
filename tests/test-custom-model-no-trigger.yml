@@ -1,0 +1,41 @@
+name: Test custom model inputs with no trigger
+on:
+  workflow_dispatch:
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+
+      - id: action
+        uses: .
+        with:
+          openrouter_api_key: sk-or-test-fake-key-for-testing-only
+          review_model: "deepseek/deepseek-r1"
+          security_model: "deepseek/deepseek-r1"
+          enable_validator: "false"
+          run_security: "false"
+
+      - name: Assert contains_trigger is false with custom model
+        env:
+          ACTUAL: ${{ steps.action.outputs.contains_trigger }}
+        run: |
+          echo "actual contains_trigger: $ACTUAL"
+          if [ "$ACTUAL" != "false" ]; then
+            echo "FAIL: expected contains_trigger='false' but got '$ACTUAL'"
+            exit 1
+          fi
+          echo "PASS: contains_trigger is false as expected with custom model override"
+
+      - name: Assert no review IDs were set
+        env:
+          CODE_REVIEW_ID: ${{ steps.action.outputs.code_review_id }}
+          SECURITY_REVIEW_ID: ${{ steps.action.outputs.security_review_id }}
+        run: |
+          echo "code_review_id: '$CODE_REVIEW_ID'"
+          echo "security_review_id: '$SECURITY_REVIEW_ID'"
+          if [ -n "$CODE_REVIEW_ID" ] || [ -n "$SECURITY_REVIEW_ID" ]; then
+            echo "FAIL: expected no review IDs to be set when there is no trigger"
+            exit 1
+          fi
+          echo "PASS: no review IDs set as expected"
