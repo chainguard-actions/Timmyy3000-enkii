@@ -1,0 +1,30 @@
+name: Test enable_validator flag on workflow_dispatch
+on:
+  workflow_dispatch:
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+
+      - id: action
+        uses: .
+        with:
+          openrouter_api_key: "sk-or-test-fake-key-for-validator-flag-scenario"
+          review_model: "@preset/enkii"
+          security_model: "@preset/enkii"
+          enable_validator: "true"
+          run_security: "true"
+        env:
+          ENKII_USAGE_REPORTING: "false"
+
+      - name: Assert contains_trigger is false with validator enabled
+        env:
+          ACTUAL: ${{ steps.action.outputs.contains_trigger }}
+        run: |
+          echo "actual contains_trigger: $ACTUAL"
+          if [ "$ACTUAL" != "false" ]; then
+            echo "FAIL: expected contains_trigger='false' on workflow_dispatch (validator=true), got '$ACTUAL'"
+            exit 1
+          fi
+          echo "PASS: contains_trigger is false as expected even with enable_validator=true"

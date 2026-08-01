@@ -1,0 +1,53 @@
+name: Test no-trigger on workflow_dispatch
+on:
+  workflow_dispatch:
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+
+      - id: action
+        uses: .
+        with:
+          openrouter_api_key: "sk-or-test-fake-key-for-no-trigger-scenario"
+          review_model: "@preset/enkii"
+          security_model: "@preset/enkii"
+          run_security: "true"
+          enable_validator: "false"
+        env:
+          ENKII_USAGE_REPORTING: "false"
+
+      - name: Assert contains_trigger is false
+        env:
+          ACTUAL: ${{ steps.action.outputs.contains_trigger }}
+        run: |
+          echo "actual contains_trigger: $ACTUAL"
+          if [ "$ACTUAL" != "false" ]; then
+            echo "FAIL: expected contains_trigger='false' on workflow_dispatch, got '$ACTUAL'"
+            exit 1
+          fi
+          echo "PASS: contains_trigger is false as expected"
+
+      - name: Assert no review IDs were set
+        env:
+          CODE_REVIEW_ID: ${{ steps.action.outputs.code_review_id }}
+          SECURITY_REVIEW_ID: ${{ steps.action.outputs.security_review_id }}
+          POLICY_REVIEW_ID: ${{ steps.action.outputs.policy_review_id }}
+        run: |
+          echo "code_review_id: '$CODE_REVIEW_ID'"
+          echo "security_review_id: '$SECURITY_REVIEW_ID'"
+          echo "policy_review_id: '$POLICY_REVIEW_ID'"
+          if [ -n "$CODE_REVIEW_ID" ]; then
+            echo "FAIL: expected no code_review_id on workflow_dispatch, got '$CODE_REVIEW_ID'"
+            exit 1
+          fi
+          if [ -n "$SECURITY_REVIEW_ID" ]; then
+            echo "FAIL: expected no security_review_id on workflow_dispatch, got '$SECURITY_REVIEW_ID'"
+            exit 1
+          fi
+          if [ -n "$POLICY_REVIEW_ID" ]; then
+            echo "FAIL: expected no policy_review_id on workflow_dispatch, got '$POLICY_REVIEW_ID'"
+            exit 1
+          fi
+          echo "PASS: no review IDs set as expected"

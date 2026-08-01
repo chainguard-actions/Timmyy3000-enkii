@@ -1,0 +1,30 @@
+name: Test custom model inputs on workflow_dispatch
+on:
+  workflow_dispatch:
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+
+      - id: action
+        uses: .
+        with:
+          openrouter_api_key: "sk-or-test-fake-key-for-custom-models-scenario"
+          review_model: "deepseek/deepseek-r1"
+          security_model: "anthropic/claude-3-5-sonnet"
+          run_security: "false"
+          enable_validator: "false"
+        env:
+          ENKII_USAGE_REPORTING: "false"
+
+      - name: Assert contains_trigger is false with custom models
+        env:
+          ACTUAL: ${{ steps.action.outputs.contains_trigger }}
+        run: |
+          echo "actual contains_trigger: $ACTUAL"
+          if [ "$ACTUAL" != "false" ]; then
+            echo "FAIL: expected contains_trigger='false' on workflow_dispatch with custom models, got '$ACTUAL'"
+            exit 1
+          fi
+          echo "PASS: contains_trigger is false as expected with custom model inputs"
