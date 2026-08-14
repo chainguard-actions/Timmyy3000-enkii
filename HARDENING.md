@@ -8,27 +8,35 @@
 
 **Test Policy SHA:** `843adf9e4b8f85d0c08b27b9d0b09dd094b54702`
 
-**Harden Agent Version:** `1`
+**Harden Agent Version:** `2`
 
-Action **Timmyy3000--enkii/v0.2.0-beta.1** was hardened automatically. 3 finding(s) were identified and resolved across 1 iteration(s).
+Action **Timmyy3000--enkii/v0.2.0-beta.1** was hardened automatically. 3 finding(s) were identified and resolved across 2 iteration(s).
 
 ## Findings Fixed
 
 ### script-injection (severity: high)
 
-Sub-rule (a): Direct expression interpolation of `${{ inputs.openrouter_api_key }}` inside a `run:` shell command string. The line `run: echo "::add-mask::${{ inputs.openrouter_api_key }}"` embeds the inputs expression directly into the shell command before the shell ever sees it, allowing an attacker-controlled value to inject shell metacharacters. The value should be passed via an `env:` variable and then referenced as `"$ENV_VAR"` in the shell.
+Sub-rule (a): The 'Mask OpenRouter API key' step directly interpolates the expression `${{ inputs.openrouter_api_key }}` inside the `run:` shell command string: `run: echo "::add-mask::${{ inputs.openrouter_api_key }}"`.
+
+Before the shell ever sees the command, GitHub Actions performs YAML template substitution, embedding the raw value of `inputs.openrouter_api_key` into the shell string. A caller supplying a value containing shell metacharacters (e.g. `$(...)`, backticks, `;`, newlines) could achieve command injection. The fix is to pass the value via an `env:` variable and reference it as `$ENV_VAR` in the shell command, e.g.:
+
+```yaml
+env:
+  API_KEY: ${{ inputs.openrouter_api_key }}
+run: echo "::add-mask::$API_KEY"
+```
 
 Locations:
 
-- `action.yml:55`
+- `action.yml:56`
 
 ### unpinned-uses (severity: high)
 
-The composite action step `uses: oven-sh/setup-bun@v2` references a mutable tag (`v2`) instead of a full 40-character commit SHA. If the tag is moved or the repository is compromised, the action will silently execute different code. Pin to a specific commit SHA, e.g. `oven-sh/setup-bun@<40-char-sha> # v2`.
+The composite action step `uses: oven-sh/setup-bun@v2` references a mutable tag (`@v2`) rather than a pinned 40-character commit SHA. If the `oven-sh/setup-bun` repository is compromised or the tag is moved, the action will silently execute different code. Pin to a full SHA, e.g. `uses: oven-sh/setup-bun@<40-char-sha> # v2`.
 
 Locations:
 
-- `action.yml:58`
+- `action.yml:59`
 
 ### static-inline-injection (severity: high)
 
@@ -46,5 +54,13 @@ Locations:
 
 **Notes:**
 
-Fixed three findings in action.yml: (1) Moved `${{ inputs.openrouter_api_key }}` from the `run:` shell string of the 'Mask OpenRouter API key' step into an `env:` block as `OPENROUTER_API_KEY`, referencing it as `$OPENROUTER_API_KEY` in the shell to prevent script injection. (2) Pinned `oven-sh/setup-bun@v2` to its full commit SHA `0c5077e51419868618aeaa5fe8019c62421857d6` with a `# v2` comment.
+1. Fixed script injection in 'Mask OpenRouter API key' step: moved `${{ inputs.openrouter_api_key }}` from the run: shell string into an env: block as `API_KEY`, and updated the run command to use `$API_KEY`. 2. Pinned `oven-sh/setup-bun@v2` to full commit SHA `0c5077e51419868618aeaa5fe8019c62421857d6` with `# v2` comment for readability.
+
+### Iteration 2
+
+**Fixes applied:** unpinned-uses
+
+**Notes:**
+
+Pinned `actions/checkout@v4` to its full commit SHA `11d5960a326750d5838078e36cf38b85af677262` in `.github/workflows/enkii-review.yml` (line 26), preserving the `# v4` comment for readability. No other findings were present; the workflow already had a minimal `permissions:` block.
 

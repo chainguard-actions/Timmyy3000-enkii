@@ -1,0 +1,28 @@
+name: Test custom model inputs (no-trigger scenario)
+on:
+  workflow_dispatch:
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+
+      - id: action
+        uses: .
+        with:
+          openrouter_api_key: "sk-or-fake-key-for-testing-custom-models"
+          review_model: "deepseek/deepseek-r1"
+          security_model: "deepseek/deepseek-r1"
+          enable_validator: "true"
+          run_security: "false"
+
+      - name: Assert contains_trigger is false with custom models
+        env:
+          ACTUAL: ${{ steps.action.outputs.contains_trigger }}
+        run: |
+          echo "actual contains_trigger: $ACTUAL"
+          if [ "$ACTUAL" != "false" ]; then
+            echo "FAIL: expected contains_trigger='false' but got '$ACTUAL'"
+            exit 1
+          fi
+          echo "PASS: action handled custom model inputs and correctly detected no trigger"
