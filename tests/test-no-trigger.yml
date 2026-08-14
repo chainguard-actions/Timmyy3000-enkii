@@ -1,4 +1,4 @@
-name: Test no-trigger on workflow_dispatch
+name: Test no trigger on workflow_dispatch
 on:
   workflow_dispatch:
 jobs:
@@ -10,40 +10,44 @@ jobs:
       - id: action
         uses: .
         with:
-          openrouter_api_key: "fake-api-key-for-testing"
-        env:
-          GITHUB_EVENT_NAME: workflow_dispatch
-          OVERRIDE_GITHUB_TOKEN: ${{ github.token }}
+          # A non-empty fake key is required to pass env validation.
+          # The action exits early (no trigger) before ever calling the OpenRouter API,
+          # so no real key is needed for this scenario.
+          openrouter_api_key: fake-key-for-no-trigger-test
+          review_model: "@preset/enkii"
+          security_model: "@preset/enkii"
+          enable_validator: "false"
+          run_security: "true"
 
       - name: Assert contains_trigger is false
         env:
           ACTUAL: ${{ steps.action.outputs.contains_trigger }}
         run: |
-          echo "actual: $ACTUAL"
+          echo "actual contains_trigger: $ACTUAL"
           if [ "$ACTUAL" != "false" ]; then
-            echo "FAIL: expected contains_trigger to be 'false' for workflow_dispatch event, got '$ACTUAL'"
+            echo "FAIL: expected contains_trigger='false' but got '$ACTUAL'"
             exit 1
           fi
-          echo "PASS: contains_trigger is false as expected for non-PR event"
+          echo "PASS: contains_trigger is false as expected for workflow_dispatch"
 
       - name: Assert code_review_id is empty
         env:
           ACTUAL: ${{ steps.action.outputs.code_review_id }}
         run: |
-          echo "actual: '$ACTUAL'"
+          echo "actual code_review_id: '$ACTUAL'"
           if [ -n "$ACTUAL" ]; then
-            echo "FAIL: expected code_review_id to be empty, got '$ACTUAL'"
+            echo "FAIL: expected code_review_id to be empty but got '$ACTUAL'"
             exit 1
           fi
-          echo "PASS: code_review_id is empty as expected"
+          echo "PASS: code_review_id is empty as expected (no review was triggered)"
 
       - name: Assert security_review_id is empty
         env:
           ACTUAL: ${{ steps.action.outputs.security_review_id }}
         run: |
-          echo "actual: '$ACTUAL'"
+          echo "actual security_review_id: '$ACTUAL'"
           if [ -n "$ACTUAL" ]; then
-            echo "FAIL: expected security_review_id to be empty, got '$ACTUAL'"
+            echo "FAIL: expected security_review_id to be empty but got '$ACTUAL'"
             exit 1
           fi
-          echo "PASS: security_review_id is empty as expected"
+          echo "PASS: security_review_id is empty as expected (no review was triggered)"
