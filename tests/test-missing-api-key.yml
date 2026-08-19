@@ -1,0 +1,32 @@
+name: Test enkii - missing OpenRouter API key fails gracefully
+on:
+  workflow_dispatch:
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+
+      # The action requires openrouter_api_key. Passing an empty string should
+      # cause validateEnv() to throw and the action to call core.setFailed().
+      - id: action
+        uses: .
+        with:
+          openrouter_api_key: ""
+        continue-on-error: true
+
+      - name: Assert action failed due to missing API key
+        env:
+          OUTCOME: ${{ steps.action.outcome }}
+        run: |
+          echo "outcome: $OUTCOME"
+          if [ "$OUTCOME" = "failure" ]; then
+            echo "PASS: action correctly failed when openrouter_api_key is empty"
+          elif [ "$OUTCOME" = "success" ]; then
+            echo "FAIL: expected action to fail with missing API key, but it succeeded"
+            exit 1
+          else
+            echo "FAIL: unexpected outcome '$OUTCOME'"
+            exit 1
+          fi

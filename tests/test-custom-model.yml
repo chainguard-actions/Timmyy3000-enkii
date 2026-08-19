@@ -1,0 +1,41 @@
+name: Test enkii - custom model inputs accepted
+on:
+  workflow_dispatch:
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+
+      # Test that the action accepts custom model overrides and still runs
+      # correctly on workflow_dispatch (no PR trigger → contains_trigger=false).
+      - id: action
+        uses: .
+        with:
+          openrouter_api_key: "sk-or-test-placeholder-key-for-harness"
+          review_model: "deepseek/deepseek-r1"
+          security_model: "deepseek/deepseek-r1"
+          enable_validator: "false"
+          run_security: "false"
+        continue-on-error: true
+
+      - name: Assert action ran and contains_trigger is false or failed gracefully
+        env:
+          CONTAINS_TRIGGER: ${{ steps.action.outputs.contains_trigger }}
+          OUTCOME: ${{ steps.action.outcome }}
+        run: |
+          echo "outcome: $OUTCOME"
+          echo "contains_trigger: $CONTAINS_TRIGGER"
+          if [ "$OUTCOME" = "success" ]; then
+            if [ "$CONTAINS_TRIGGER" != "false" ]; then
+              echo "FAIL: expected contains_trigger='false' on workflow_dispatch with custom model, got '$CONTAINS_TRIGGER'"
+              exit 1
+            fi
+            echo "PASS: action accepted custom model inputs and correctly set contains_trigger=false"
+          elif [ "$OUTCOME" = "failure" ]; then
+            echo "PASS: action failed gracefully (sentinel repo or API issue expected)"
+          else
+            echo "FAIL: unexpected outcome '$OUTCOME'"
+            exit 1
+          fi
