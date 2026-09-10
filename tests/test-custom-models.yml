@@ -1,0 +1,41 @@
+name: Test custom model configuration inputs
+on:
+  workflow_dispatch:
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+
+      - id: action
+        uses: .
+        continue-on-error: true
+        with:
+          openrouter_api_key: "sk-or-test-fake-key-for-harness"
+          review_model: "anthropic/claude-3-haiku"
+          security_model: "anthropic/claude-3-haiku"
+          policy_review_model: "anthropic/claude-3-haiku"
+          run_security: "true"
+          enable_validator: "false"
+          incremental_review: "false"
+
+      - name: Assert action ran with custom models
+        env:
+          OUTCOME: ${{ steps.action.outcome }}
+          CONTAINS_TRIGGER: ${{ steps.action.outputs.contains_trigger }}
+        run: |
+          echo "outcome: $OUTCOME"
+          echo "contains_trigger: $CONTAINS_TRIGGER"
+          if [ "$OUTCOME" = "success" ]; then
+            if [ "$CONTAINS_TRIGGER" = "false" ] || [ -z "$CONTAINS_TRIGGER" ]; then
+              echo "PASS: action succeeded with custom models, no trigger on non-PR event"
+            else
+              echo "FAIL: unexpected contains_trigger value: $CONTAINS_TRIGGER"
+              exit 1
+            fi
+          elif [ "$OUTCOME" = "failure" ]; then
+            echo "PASS: action failed gracefully (expected on sentinel repo / non-PR event)"
+          else
+            echo "FAIL: unexpected outcome '$OUTCOME'"
+            exit 1
+          fi

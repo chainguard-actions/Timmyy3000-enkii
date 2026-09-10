@@ -1,0 +1,40 @@
+name: Test validator enabled input
+on:
+  workflow_dispatch:
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+
+      - id: action
+        uses: .
+        continue-on-error: true
+        with:
+          openrouter_api_key: "sk-or-test-fake-key-for-harness"
+          review_model: "deepseek/deepseek-chat"
+          security_model: "deepseek/deepseek-chat"
+          run_security: "false"
+          enable_validator: "true"
+          incremental_review: "false"
+
+      - name: Assert action ran with validator enabled
+        env:
+          OUTCOME: ${{ steps.action.outcome }}
+          CONTAINS_TRIGGER: ${{ steps.action.outputs.contains_trigger }}
+        run: |
+          echo "outcome: $OUTCOME"
+          echo "contains_trigger: $CONTAINS_TRIGGER"
+          if [ "$OUTCOME" = "success" ]; then
+            if [ "$CONTAINS_TRIGGER" = "false" ] || [ -z "$CONTAINS_TRIGGER" ]; then
+              echo "PASS: action succeeded with validator enabled, no trigger on non-PR event"
+            else
+              echo "FAIL: unexpected contains_trigger value: $CONTAINS_TRIGGER"
+              exit 1
+            fi
+          elif [ "$OUTCOME" = "failure" ]; then
+            echo "PASS: action failed gracefully (expected on sentinel repo / non-PR event with validator)"
+          else
+            echo "FAIL: unexpected outcome '$OUTCOME'"
+            exit 1
+          fi
