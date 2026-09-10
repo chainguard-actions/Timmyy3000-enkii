@@ -15,6 +15,7 @@ Hardened by [Chainguard](https://www.chainguard.dev) from the upstream action at
 | v0.2.0-beta.5 | [`v0.2.0-beta.5`](https://github.com/chainguard-actions/Timmyy3000-enkii/tree/v0.2.0-beta.5) | [`b7c4395`](https://github.com/Timmyy3000/enkii/commit/b7c43955489940fd809df72c22b413484f5c265e) |
 | v0.2.0-beta.6 | [`v0.2.0-beta.6`](https://github.com/chainguard-actions/Timmyy3000-enkii/tree/v0.2.0-beta.6) | [`ce39c66`](https://github.com/Timmyy3000/enkii/commit/ce39c661094b3859a2d45de83c3b330a750857a3) |
 | v1.0.0 | [`v1.0.0`](https://github.com/chainguard-actions/Timmyy3000-enkii/tree/v1.0.0) | [`39dec24`](https://github.com/Timmyy3000/enkii/commit/39dec2413ab40a44d84faf9e05b06c0d5ade1fe6) |
+| v1.1.0 | [`v1.1.0`](https://github.com/chainguard-actions/Timmyy3000-enkii/tree/v1.1.0) | [`5532fe3`](https://github.com/Timmyy3000/enkii/commit/5532fe3b94ea980e435022b51530ea34fb9d16d6) |
 
 ## Privacy
 
