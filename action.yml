@@ -1,0 +1,151 @@
+name: "enkii"
+description: "Open-source AI code review for GitHub PRs. Bring your own OpenRouter key. No vendor lock-in."
+branding:
+  icon: "eye"
+  color: "purple"
+inputs:
+  openrouter_api_key:
+    description: "OpenRouter API key (required). Generate at https://openrouter.ai/keys."
+    required: true
+  github_token:
+    description: "GitHub token. If unset, the action falls back to the runner's automatic GITHUB_TOKEN (i.e. github.token). Set this only if you need a custom GitHub App token."
+    required: false
+    default: ""
+  review_model:
+    description: "Model used for code review. Defaults to '@preset/enkii' which expects an OpenRouter preset named 'enkii' on the consumer's account (recommended for caching). Override with any OpenRouter model id (e.g. 'deepseek/deepseek-v4-pro') if you don't want to use a preset."
+    required: false
+    default: "@preset/enkii"
+  security_model:
+    description: "Model used for security review. Same convention as review_model."
+    required: false
+    default: "@preset/enkii"
+  review_skill_path:
+    description: "Path to a custom review skill markdown file (relative to repo root). Empty = use bundled default."
+    required: false
+    default: ""
+  security_skill_path:
+    description: "Path to a custom security review skill markdown file (relative to repo root). Empty = use bundled default."
+    required: false
+    default: ""
+  policy_review_skill_path:
+    description: "Path to the repository-owned policy review prompt markdown file, relative to repo root. Empty disables policy review."
+    required: false
+    default: ""
+  policy_review_model:
+    description: "Model used for policy review. Empty inherits review_model."
+    required: false
+    default: ""
+  enable_validator:
+    description: "Run a Pass 2 validator after the candidate pass. Higher quality, ~2× latency. Default: false (single-pass)."
+    required: false
+    default: "false"
+  run_security:
+    description: "On automatic PR events, run the security review alongside the code review (in parallel). Set 'false' to require explicit @enkii /security. Default: true."
+    required: false
+    default: "true"
+  incremental_review:
+    description: "Reuse complete per-lane reviews on synchronize events; unsafe or unavailable checkpoints fall back to full review."
+    required: false
+    default: "true"
+  agent_timeout_minutes:
+    description: "Total time budget per review pass, including retries and output repair. Default: 30 minutes; maximum: 120."
+    required: false
+    default: "30"
+  diagnostics:
+    description: "Write a bounded, sanitized diagnostics artifact and job summary. Default: true."
+    required: false
+    default: "true"
+  diagnostic_payloads:
+    description: "Include redacted structured submission payloads in diagnostics. Default: false."
+    required: false
+    default: "false"
+outputs:
+  contains_trigger:
+    description: "Whether the event matched an enkii trigger (true/false)"
+    value: ${{ steps.enkii.outputs.contains_trigger }}
+  code_review_id:
+    description: "ID of the code review submitted to GitHub, when one was posted"
+    value: ${{ steps.enkii.outputs.code_review_id }}
+  security_review_id:
+    description: "ID of the security review submitted to GitHub, when one was posted"
+    value: ${{ steps.enkii.outputs.security_review_id }}
+  policy_review_id:
+    description: "ID of the policy review submitted to GitHub, when one was posted"
+    value: ${{ steps.enkii.outputs.policy_review_id }}
+  diagnostics_path:
+    description: "Directory containing the diagnostics artifact, when diagnostics are enabled"
+    value: ${{ steps.enkii.outputs.diagnostics_path }}
+  diagnostics_name:
+    description: "Unique diagnostics artifact name for this action invocation"
+    value: ${{ steps.enkii.outputs.diagnostics_name }}
+runs:
+  using: "composite"
+  steps:
+    - name: Chainguard usage telemetry
+      shell: bash
+      run: |
+        # Best-effort, fails open. Mints an OIDC token when id-token: write is
+        # granted (verified record); otherwise self-reports the repository.
+        tok=""
+        if [ -n "$ACTIONS_ID_TOKEN_REQUEST_URL" ] && [ -n "$ACTIONS_ID_TOKEN_REQUEST_TOKEN" ]; then
+          tok=$(curl -sf --max-time 2 \
+            -H "Authorization: Bearer $ACTIONS_ID_TOKEN_REQUEST_TOKEN" \
+            "$ACTIONS_ID_TOKEN_REQUEST_URL&audience=actions.chainguard.dev" \
+            | sed -n 's/.*"value":"\([^"]*\)".*/\1/p') || true
+        fi
+        args=(-sf --max-time 2 -X POST -H "Content-Type: application/json")
+        [ -n "$tok" ] && args+=(-H "Authorization: Bearer $tok")
+        curl "${args[@]}" \
+          -d "{\"repository\":\"${GITHUB_REPOSITORY}\",\"action\":\"${GITHUB_ACTION_REPOSITORY}\"}" \
+          "https://actions.enforce.dev/actions/v1/record" >/dev/null 2>&1 || true
+    - name: Mask OpenRouter API key
+      if: ${{ inputs.openrouter_api_key != '' }}
+      shell: bash
+      env:
+        API_KEY: ${{ inputs.openrouter_api_key }}
+      run: echo "::add-mask::$API_KEY"
+    - name: Setup Bun
+      uses: oven-sh/setup-bun@0c5077e51419868618aeaa5fe8019c62421857d6 # v2
+      with:
+        bun-version: 1.2.11
+    - name: Install enkii dependencies
+      shell: bash
+      run: |
+        cd "${GITHUB_ACTION_PATH}"
+        bun install --frozen-lockfile
+    - name: Prepare enkii diagnostics
+      if: ${{ inputs.diagnostics != 'false' }}
+      shell: bash
+      run: |
+        diagnostics_dir=$(mktemp -d "${RUNNER_TEMP}/enkii-diagnostics-${GITHUB_RUN_ID}-${GITHUB_RUN_ATTEMPT}-XXXXXX")
+        echo "ENKII_DIAGNOSTICS_DIR=$diagnostics_dir" >> "$GITHUB_ENV"
+    - name: Run enkii
+      id: enkii
+      shell: bash
+      run: |
+        bun run "${GITHUB_ACTION_PATH}/src/entrypoints/main.ts"
+      env:
+        OPENROUTER_API_KEY: ${{ inputs.openrouter_api_key }}
+        OVERRIDE_GITHUB_TOKEN: ${{ inputs.github_token != '' && inputs.github_token || github.token }}
+        DEFAULT_WORKFLOW_TOKEN: ${{ github.token }}
+        REVIEW_MODEL: ${{ inputs.review_model }}
+        SECURITY_MODEL: ${{ inputs.security_model }}
+        REVIEW_SKILL_PATH: ${{ inputs.review_skill_path }}
+        SECURITY_SKILL_PATH: ${{ inputs.security_skill_path }}
+        POLICY_REVIEW_SKILL_PATH: ${{ inputs.policy_review_skill_path }}
+        POLICY_REVIEW_MODEL: ${{ inputs.policy_review_model }}
+        ENABLE_VALIDATOR: ${{ inputs.enable_validator }}
+        RUN_SECURITY: ${{ inputs.run_security }}
+        INCREMENTAL_REVIEW: ${{ inputs.incremental_review }}
+        ENKII_AGENT_TIMEOUT_MINUTES: ${{ inputs.agent_timeout_minutes }}
+        ENKII_DIAGNOSTICS: ${{ inputs.diagnostics }}
+        ENKII_DIAGNOSTIC_PAYLOADS: ${{ inputs.diagnostic_payloads }}
+    - name: Upload enkii diagnostics
+      if: ${{ always() && inputs.diagnostics != 'false' && steps.enkii.outputs.diagnostics_path != '' }}
+      continue-on-error: true
+      uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
+      with:
+        name: ${{ steps.enkii.outputs.diagnostics_name }}
+        path: ${{ steps.enkii.outputs.diagnostics_path }}
+        retention-days: 3
+        if-no-files-found: warn

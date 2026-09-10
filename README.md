@@ -1,22 +1,333 @@
-# Timmyy3000/enkii
+# enkii
 
-Open-source AI code review for GitHub PRs. Bring your own OpenRouter key. No vendor lock-in.
+Open-source AI code review for GitHub pull requests.
 
-Hardened by [Chainguard](https://www.chainguard.dev) from the upstream action at [https://github.com/Timmyy3000/enkii](https://github.com/Timmyy3000/enkii).
+Built by [@timithechef](https://x.com/timithechef).
 
-## Versions
+Enkii is a **Greptile / CodeRabbit-style alternative** built on **PI + GitHub Actions** with a simple model: bring your own OpenRouter key, keep prompts editable, and run reviews in your own repo.
 
-| Version | Tag | Upstream commit |
-|---------|-----|-----------------|
-| v0.2.0-beta.1 | [`v0.2.0-beta.1`](https://github.com/chainguard-actions/Timmyy3000-enkii/tree/v0.2.0-beta.1) | [`6543334`](https://github.com/Timmyy3000/enkii/commit/654333406da6b4ce683c71f9b44dd89ee84ff83b) |
-| v0.2.0-beta.2 | [`v0.2.0-beta.2`](https://github.com/chainguard-actions/Timmyy3000-enkii/tree/v0.2.0-beta.2) | [`7b65b29`](https://github.com/Timmyy3000/enkii/commit/7b65b29deb6297fb7a387c92b8ab7f0f857633e7) |
-| v0.2.0-beta.3 | [`v0.2.0-beta.3`](https://github.com/chainguard-actions/Timmyy3000-enkii/tree/v0.2.0-beta.3) | [`bd10e57`](https://github.com/Timmyy3000/enkii/commit/bd10e57e9bddc7d4993c41dd2b82e636c585cf9b) |
-| v0.2.0-beta.4 | [`v0.2.0-beta.4`](https://github.com/chainguard-actions/Timmyy3000-enkii/tree/v0.2.0-beta.4) | [`3028404`](https://github.com/Timmyy3000/enkii/commit/3028404cff2f060cba69e8543e39835deddcea0b) |
-| v0.2.0-beta.5 | [`v0.2.0-beta.5`](https://github.com/chainguard-actions/Timmyy3000-enkii/tree/v0.2.0-beta.5) | [`b7c4395`](https://github.com/Timmyy3000/enkii/commit/b7c43955489940fd809df72c22b413484f5c265e) |
-| v0.2.0-beta.6 | [`v0.2.0-beta.6`](https://github.com/chainguard-actions/Timmyy3000-enkii/tree/v0.2.0-beta.6) | [`ce39c66`](https://github.com/Timmyy3000/enkii/commit/ce39c661094b3859a2d45de83c3b330a750857a3) |
-| v1.0.0 | [`v1.0.0`](https://github.com/chainguard-actions/Timmyy3000-enkii/tree/v1.0.0) | [`39dec24`](https://github.com/Timmyy3000/enkii/commit/39dec2413ab40a44d84faf9e05b06c0d5ade1fe6) |
-| v1.1.0 | [`v1.1.0`](https://github.com/chainguard-actions/Timmyy3000-enkii/tree/v1.1.0) | [`5532fe3`](https://github.com/Timmyy3000/enkii/commit/5532fe3b94ea980e435022b51530ea34fb9d16d6) |
-| v1.2.0 | [`v1.2.0`](https://github.com/chainguard-actions/Timmyy3000-enkii/tree/v1.2.0) | [`c130de2`](https://github.com/Timmyy3000/enkii/commit/c130de2a4d5d872ad0bcfa8bb9b1653b9f0c216c) |
+## Name origin
+
+The name **Enkii** is inspired by **Enki** — the Sumerian god associated with wisdom, craft, and problem-solving.
+
+## Why enkii exists
+
+Most AI review tools are useful but closed, expensive, or hard to tune. Enkii is for teams that want:
+
+- No vendor lock-in
+- Editable review behavior (markdown skill files)
+- Transparent, repo-native automation
+- Bring-your-own model/provider via OpenRouter
+
+## What enkii does today
+
+- Automatic code review on PR open/sync/reopen
+- On-demand commands in PR comments:
+  - `@enkii /review` — re-run code review
+  - `@enkii /benchmark` — fresh review ignoring prior PR comments
+  - `@enkii /security` — focused security review
+  - `@enkii` or `@enkii help` — help reply
+  - `@enkii status` — status reply
+- Optional two-pass validation pipeline (`enable_validator=true`)
+- Inline comments + resilient summary fallback for unanchorable comments
+- Optional repository-defined policy review that runs automatically alongside code and security review
+
+## Quick start (5 minutes)
+
+Use the moving `v0.2` tag unless you need strict pinning to one exact build. `v0.2` will be moved forward to the latest compatible `0.2.x` release, while exact tags like `v0.2.0-beta.4` stay immutable.
+
+### 1) Add OpenRouter key
+
+Create a repo secret:
+
+- Name: `OPENROUTER_API_KEY`
+- Value: your key from <https://openrouter.ai/keys>
+
+### 2) Add workflow
+
+Create `.github/workflows/enkii-review.yml`:
+
+```yaml
+name: enkii review
+
+on:
+  pull_request:
+    types: [opened, synchronize, reopened]
+  issue_comment:
+    types: [created]
+  pull_request_review_comment:
+    types: [created]
+
+permissions:
+  contents: read
+  pull-requests: write
+  issues: write
+
+concurrency:
+  group: enkii-pr-${{ github.event.pull_request.number || github.event.issue.number || github.run_id }}
+  cancel-in-progress: true
+
+jobs:
+  review:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v7
+        with:
+          fetch-depth: 0
+
+      - name: Run enkii
+        uses: Timmyy3000/enkii@v0.2
+        with:
+          openrouter_api_key: ${{ secrets.OPENROUTER_API_KEY }}
+```
+
+> Yes, `actions/checkout` is required.
+>
+> Avoid adding `pull_request_review: submitted` to this workflow with `cancel-in-progress: true` — it can self-cancel when enkii posts its own review.
+
+### 3) Open a PR
+
+enkii runs automatically. You can then comment with:
+
+- `@enkii /review`
+- `@enkii /security`
+- `@enkii /benchmark`
+
+## Model configuration
+
+By default, enkii uses:
+
+- `review_model: "@preset/enkii"`
+- `security_model: "@preset/enkii"`
+- `policy_review_model: ""` (inherits `review_model`)
+
+That means your OpenRouter account should have a preset named `enkii`.
+
+### Recommended preset path
+
+Create OpenRouter preset `enkii` and set:
+
+- model: your preferred model
+- provider order: your preferred primary/fallback providers
+- allow fallbacks: enabled
+
+### Direct model override path
+
+You can skip presets and set model IDs directly:
+
+```yaml
+- name: Run enkii
+  uses: Timmyy3000/enkii@v0.2
+  with:
+    openrouter_api_key: ${{ secrets.OPENROUTER_API_KEY }}
+    review_model: deepseek/deepseek-chat-v4.1
+    security_model: deepseek/deepseek-chat-v4.1
+```
+
+If you need a fully reproducible rollout, pin an exact release tag instead:
+
+```yaml
+uses: Timmyy3000/enkii@v0.2.0-beta.4
+```
+
+## Compatibility matrix
+
+- Runtime: Bun `1.2.11`
+- GitHub events: `pull_request`, `issue_comment`, `pull_request_review_comment`
+- Trigger commands: `@enkii /review`, `@enkii /security`, `@enkii /benchmark`, `@enkii help`, `@enkii status`
+- Repository type: private or public repositories on GitHub
+- Fork PR behavior: custom code/security skill overrides from fork heads are blocked and bundled defaults are used; fork-owned policy-review prompts are skipped
+
+## Action inputs
+
+| Input | Required | Default | Description |
+|---|---|---|---|
+| `openrouter_api_key` | yes | — | OpenRouter API key |
+| `github_token` | no | workflow `github.token` | Override token (advanced) |
+| `review_model` | no | `@preset/enkii` | Model for code review |
+| `security_model` | no | `@preset/enkii` | Model for security review |
+| `review_skill_path` | no | `""` | Custom review skill path |
+| `security_skill_path` | no | `""` | Custom security skill path |
+| `policy_review_skill_path` | no | `""` | Repository-owned policy review prompt; empty disables policy review |
+| `policy_review_model` | no | `""` | Policy review model; empty inherits `review_model` |
+| `enable_validator` | no | `"false"` | Two-pass review validation |
+| `run_security` | no | `"true"` | Auto-run security review on PR events |
+| `incremental_review` | no | `"true"` | Reuse completed lane coverage on eligible source-only PR updates; falls back to full review when reuse cannot be verified |
+| `agent_timeout_minutes` | no | `"30"` | Total per-pass time budget, including retries and output repair (maximum `120`) |
+| `diagnostics` | no | `"true"` | Write a bounded, sanitized job summary and three-day workflow artifact |
+| `diagnostic_payloads` | no | `"false"` | Include redacted structured submission payloads in diagnostics |
+
+## Action outputs
+
+| Output | Description |
+|---|---|
+| `contains_trigger` | Whether the current event matched enkii trigger logic |
+| `code_review_id` | GitHub review ID for code review post (if posted) |
+| `security_review_id` | GitHub review ID for security review post (if posted) |
+| `policy_review_id` | GitHub review ID for policy review post (if posted) |
+| `diagnostics_path` | Path uploaded as the diagnostics artifact when enabled |
+
+## Customizing review behavior
+
+### Review speed and coverage
+
+- Each code, security, or policy lane posts as soon as it completes. Slow or failed lanes do not hold back successful results.
+- A missing structured submission gets one repair prompt in the existing agent session, preserving the evidence it already read. Provider failures are not treated as missing submissions.
+- Invalid structured submissions are checked before acceptance. Missing prior-finding dispositions, invalid references, and mismatched metadata or validator anchors receive a precise correction request and one replacement submission in the same session. Failed repair leaves the lane incomplete.
+- `agent_timeout_minutes` is a **total budget per pass**, including transient retries and output repair (default: 30 minutes, maximum: 120). A timeout reports failure rather than restarting for another full budget. Optional validation is a separate pass with its own budget. `ENKII_AGENT_TIMEOUT_MS` remains a capped advanced override.
+- Bounded context includes a diff/hunk index, description, compact comments and source excerpts around changed hunks. Omitted context is explicitly labeled and the original files remain available to the reviewer.
+- Automatic `synchronize` events can review the delta since that lane's last successfully posted, complete review. Every prior finding must be rechecked, including findings preserved only in the summary. The reviewer must inspect affected callers, dependencies and contracts even when those files are unchanged.
+
+Incremental reuse requires matching repository, PR, posting bot identity, base commit, configured model ID, prompt/runtime and compatible Git history. Enkii conservatively runs a full review for guide/configuration/non-source changes, changed bases or merge bases, divergent or missing history, shallow checkouts, fork PRs, unavailable/oversized checkpoints or unknown posting identity (including sticky tracking comments). Explicit `/review`, `/security`, and `/benchmark` commands always run a full review. Existing reviews without a checkpoint require one full review before reuse becomes possible. After changing a provider preset behind the same ID, explicitly rerun each affected lane in full before relying on incremental coverage.
+
+Checkpoints live in hidden metadata on posted reviews; no database or service is required. Incomplete coverage never creates a checkpoint or receives a clean mergeability verdict. Set `incremental_review: "false"` to require full reviews on every update. Model/provider latency still affects review time; logs include per-pass duration, tool calls, tokens and immediate publication events.
+
+### Diagnostics artifacts
+
+An Enkii update can change the runtime fingerprint and require a new full review before checkpoints from that version can be reused.
+
+Each lane's preparation event includes `scope`, `reason`, `checkpointHead` (when a relevant checkpoint was found), `eventName`, and `eventAction`. The job summary has an **Incremental reuse** table with the same evidence. `checkpoint_reused` confirms incremental scope was selected; `checkpointHead` identifies the earlier reviewed commit, while `identity.reviewedHead` identifies the current one. A checkpoint commit shown for a full review is a rejected candidate, not proof of reuse.
+
+Common full-review reasons include `event_not_synchronize`, `explicit_full_review`, `incremental_disabled`, `fork_full_review`, `checkpoint_lookup_failed`, `posting_identity_unavailable`, `no_compatible_checkpoint`, `checkpoint_base_changed`, `checkpoint_configuration_changed`, `shallow_history`, `checkpoint_history_unavailable_or_diverged`, `merge_base_changed`, and `non_source_or_guidance_changed`. Configuration matching includes the model, prompt, validator setting, and runtime fingerprint. Enkii still searches for an older compatible checkpoint; if none qualifies, it reports the newest relevant checkpoint's rejection. `no_compatible_checkpoint` covers missing or invalid/untrusted checkpoints for the lane. These diagnostics do not relax the reuse rules.
+
+When `diagnostics` is enabled, Enkii adds a GitHub job summary and uploads `diagnostics.json` for three days. It records lane/pass outcomes, coverage, selected model, bounded timings, token usage, retry/repair counts, and submission validation state. Default submission diagnostics retain counts and prior-finding indices rather than finding bodies, source paths, or explanations. Prompts and read-tool arguments/results are not captured. Operational errors can include repository paths. Set `diagnostic_payloads: "true"` to capture structured submissions with known token and secret values redacted and a 16 KiB size limit; finding text may still contain private repository details. Artifacts use the repository's existing Actions access controls.
+
+Diagnostic writing and upload failures do not change the review outcome. A hard runner termination or job timeout can prevent the final summary/artifact from being written. Set the caller's job timeout above the configured pass budget (twice that budget when validation is enabled), allowing time for preparation and posting. Set `diagnostics: "false"` to disable recording and upload.
+
+The model duration measures the interval from a provider turn starting until its assistant message ends. It cannot distinguish provider queueing, network time, and model thinking time.
+
+Enkii’s behavior is prompt/skill-driven.
+
+Bundled defaults:
+
+- `skills/review.md`
+- `skills/security-review.md`
+
+To customize in your repo:
+
+1. Create `.enkii/review.md` and/or `.enkii/security-review.md`
+2. Point workflow inputs:
+
+```yaml
+with:
+  openrouter_api_key: ${{ secrets.OPENROUTER_API_KEY }}
+  review_skill_path: .enkii/review.md
+  security_skill_path: .enkii/security-review.md
+```
+
+## Repository policy review
+
+Policy review is an optional third review lane for team- or repository-specific engineering standards. It runs only on automatic pull-request events; v1 intentionally has no policy slash command.
+
+The configured Markdown file is the policy agent's prompt, not the engineering guide itself. Keep the guide where engineers already find it, then tell the policy agent what to read and how your team wants findings written:
+
+```markdown
+# .enkii/policy-review.md
+
+Read `docs/ENGINEERING_STYLE.md` completely before reviewing the diff.
+Apply the backend risk profile and cite the relevant rule in every finding.
+Use titles such as `[policy: DS-04] External call has no timeout policy`.
+```
+
+Enable it in the workflow:
+
+```yaml
+with:
+  openrouter_api_key: ${{ secrets.OPENROUTER_API_KEY }}
+  policy_review_skill_path: .enkii/policy-review.md
+  # Optional; empty inherits review_model.
+  policy_review_model: deepseek/deepseek-chat-v4.1
+```
+
+On `pull_request` open, synchronize, and reopen events, the policy agent runs concurrently with the enabled code and security lanes. It receives the same read-only repository tools, so the prompt can reference any committed guide or supporting file in the checked-out PR HEAD.
+
+### Trust and governance
+
+- Same-repository PRs load the policy prompt and referenced guide from PR HEAD. A PR can therefore update the policy used to review itself. Protect `.enkii/policy-review.md` and critical engineering guides with `CODEOWNERS` if policy changes require designated approval.
+- Fork PRs do not run a fork-owned policy prompt. Enkii skips only the policy lane, continues code/security review, leaves `policy_review_id` empty, and records the reason in the tracking comment.
+- Paths must be repository-relative regular files. Absolute paths, traversal, symbolic links, directories, missing files, and files over 256 KB are rejected.
+- The repository prompt owns citation, finding, and summary content. Enkii adds its normal branding and severity badge, but policy reviews do not receive Enkii's generic mergeability score/verdict.
+- A configured policy lane adds another model call (and another validator call when `enable_validator` is true). The lanes run concurrently, but cost increases and total duration is bounded by the slowest lane.
+
+## AI-agent setup notes (copy/paste context)
+
+If you’re asking an AI agent to set up enkii in a repository, give it this checklist:
+
+1. Create secret `OPENROUTER_API_KEY`
+2. Create `.github/workflows/enkii-review.yml` using the workflow above
+3. Ensure workflow has `actions/checkout@v7` with `fetch-depth: 0`
+4. Ensure permissions include `pull-requests: write`, `issues: write`, `contents: read`
+5. Open a test PR and verify enkii posts a review
+6. Comment `@enkii /security` and verify a security review thread appears
+7. (Optional) add `.enkii/review.md` and wire `review_skill_path`
+8. (Optional) add `.enkii/policy-review.md`, reference the repository's engineering guide from it, and wire `policy_review_skill_path`
+
+## Reliability notes
+
+- When GitHub's PR diff API returns HTTP 406 (including its 20,000-line limit), enkii generates the complete diff locally from the verified PR head and merge base of the recorded base/head commits. All configured review lanes receive the same artifact; external diff drivers and text conversion are disabled.
+- The local fallback requires `actions/checkout` with `fetch-depth: 0`, Git 2.36+ (`fetch --refetch`), and a successful fetch of the exact base commit from the PR's target repository. It uses the configured `GITHUB_SERVER_URL` HTTPS endpoint and existing checkout Git credentials, so a fork-owned `origin` does not need the upstream base commit. Refetching verifies target access even when the commit is cached, at the cost of transferring its reachable history again. A mismatched head, unavailable base, shallow history, missing/ambiguous merge base, or output over 50 MiB stops review instead of using stale refs or truncating the diff.
+
+- enkii now updates its tracking comment when a run fails, instead of silently leaving a dangling “working…” state.
+- If inline anchors fail, enkii preserves findings in summary notes rather than dropping the entire review.
+- Avoid `pull_request_review: submitted` with `cancel-in-progress: true` in the same workflow, or runs can self-cancel when enkii submits its own review.
+- Review lanes settle independently: successful reviews are posted even if another lane fails during prompt loading, model execution, validation, or GitHub posting. The overall action still reports the failed lane after preserving successful results.
+
+## Troubleshooting
+
+### `OPENROUTER_API_KEY` missing
+
+Error example: `enkii could not find OPENROUTER_API_KEY`
+
+Fix:
+1. Go to **Settings → Secrets and variables → Actions**
+2. Add repository secret `OPENROUTER_API_KEY`
+3. Re-run the failed workflow job
+
+### Runs are unexpectedly canceled
+
+If you see canceled `enkii review` jobs, remove `pull_request_review: submitted` from your workflow triggers when using `cancel-in-progress: true`.
+
+### Permissions errors when posting comments/reviews
+
+Ensure workflow permissions include:
+- `pull-requests: write`
+- `issues: write`
+- `contents: read`
+
+## Versioning
+
+- Releases and changes are tracked in [CHANGELOG.md](CHANGELOG.md)
+- We follow SemVer for stable releases and use prerelease tags while iterating
+- Prefer the moving compatible tag (`@v0.2`) or an exact release tag such as `@v0.2.0-beta.2`, not `@main`
+
+## Project docs
+
+- [Contributing guide](CONTRIBUTING.md)
+- [Code of Conduct](CODE_OF_CONDUCT.md)
+- [Security policy](SECURITY.md)
+- [Support guide](SUPPORT.md)
+
+## Related projects (attribution)
+
+Enkii is part of an ecosystem of AI code review tools. Big respect to projects that pushed the category forward:
+
+- [Factory](https://factory.ai)
+- [PR-Agent](https://github.com/Codium-ai/pr-agent)
+- [Greptile](https://greptile.com)
+- [CodeRabbit](https://www.coderabbit.ai)
+
+## Current status
+
+Early-stage and actively evolving. Useful now, still opinionated, and open to contributions.
+
+## Contributing
+
+Issues and PRs are welcome.
+
+## License
+
+MIT — see [LICENSE](LICENSE).
 
 ## Privacy
 

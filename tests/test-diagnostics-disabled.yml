@@ -1,0 +1,40 @@
+name: Test diagnostics disabled
+on:
+  workflow_dispatch:
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+
+      - id: action
+        uses: .
+        continue-on-error: true
+        with:
+          openrouter_api_key: "sk-or-fake-key-for-testing-only"
+          diagnostics: "false"
+          run_security: "false"
+
+      - name: Assert diagnostics_path is empty when diagnostics disabled
+        env:
+          OUTCOME: ${{ steps.action.outcome }}
+          DIAGNOSTICS_PATH: ${{ steps.action.outputs.diagnostics_path }}
+          DIAGNOSTICS_NAME: ${{ steps.action.outputs.diagnostics_name }}
+        run: |
+          echo "outcome: $OUTCOME"
+          echo "diagnostics_path: $DIAGNOSTICS_PATH"
+          echo "diagnostics_name: $DIAGNOSTICS_NAME"
+          if [ "$OUTCOME" = "success" ]; then
+            # When diagnostics=false, diagnostics_path should be empty
+            if [ -z "$DIAGNOSTICS_PATH" ]; then
+              echo "PASS: diagnostics_path is empty as expected when diagnostics=false"
+            else
+              echo "FAIL: expected diagnostics_path to be empty when diagnostics=false, got '$DIAGNOSTICS_PATH'"
+              exit 1
+            fi
+          elif [ "$OUTCOME" = "failure" ]; then
+            echo "PASS: action failed gracefully (expected on sentinel repo / non-PR event)"
+          else
+            echo "FAIL: unexpected outcome '$OUTCOME'"
+            exit 1
+          fi
