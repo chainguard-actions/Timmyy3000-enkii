@@ -1,0 +1,231 @@
+# Changelog
+
+All notable changes to enkii will be documented here. Format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), versioning follows [SemVer](https://semver.org/).
+
+## [Unreleased]
+
+### Added
+
+- Bounded diagnostics artifacts and GitHub job summaries for review scope, lane outcomes, timings, usage, and structured submission validation failures.
+
+### Changed
+
+- Increase the default shared per-pass budget from 20 to 30 minutes and expose `agent_timeout_minutes` for longer reviews (up to 120 minutes).
+- Publish each review lane as soon as it finishes, without waiting for slower lanes.
+- Repair missing structured output in the same agent session and share one timeout budget across retries within each pass.
+- Prepare bounded review context upfront and reuse completed lane coverage for eligible incremental updates, with prior-finding rechecks and conservative full-review fallbacks.
+
+### Fixed
+
+- Validate submissions before ending the review session, allowing one correction of missing prior-finding dispositions, invalid references, or metadata/anchor errors within the same pass budget.
+- Continue a full review without checkpoint reuse or publication when the base branch advances during artifact preparation; still reject changed PR heads.
+
+- Preserve completed structured review output if a trailing provider request fails or the pass times out after submission.
+
+- Fall back directly to a complete, verified local Git merge-base diff when GitHub's PR diff endpoint returns HTTP 406, including diffs over its 20,000-line limit. Fetch the immutable base from the PR's target repository even when the checkout's origin is a fork, require full history, disable external diff/textconv, and fail rather than truncate artifacts above 50 MiB.
+
+## [0.2.0-beta.6] — 2026-08-19
+
+### Changed
+
+- Tightened P2 review guidance around concrete reachable impact, proportionate remediation, and current-head visibility while preserving full every-push review and P0/P1 behavior.
+- Added concise summary contracts for clean and finding-bearing code, security, and repository-policy reviews, including compact required-field policy status lines.
+- Paginated existing issue and review-comment history used to inform review runs.
+
+## [0.2.0-beta.5] — 2026-08-01
+
+### Added
+
+- Added anonymous usage reporting to Drain.
+
+### Fixed
+
+- Routed usage reporting through the named Drain domain instead of an infrastructure address.
+- Avoided duplicate Drain event paths during review execution.
+
+## [0.2.0-beta.4] — 2026-07-10
+
+### Added
+
+- OSS project hygiene docs: `CONTRIBUTING.md`, `CODE_OF_CONDUCT.md`, `SECURITY.md`, and `SUPPORT.md`.
+- GitHub issue templates (bug report + feature request), issue template config, and PR template.
+- CI workflow (`.github/workflows/ci.yml`) for tests and typecheck on PRs and pushes.
+- Added an opt-in repository policy-review lane configured with `policy_review_skill_path`. The repository-owned prompt is loaded from same-repository PR HEAD, can direct the agent to ordinary engineering guides, and runs concurrently on automatic PR events.
+- Added `policy_review_model` with `review_model` inheritance and the `policy_review_id` action output.
+
+### Changed
+
+- Dogfood workflow and README setup example no longer include `pull_request_review: submitted` to avoid self-cancel races with `cancel-in-progress: true`.
+- `action.yml` now conditionally masks `OPENROUTER_API_KEY` only when provided, avoiding empty-mask warnings.
+- Pinned `oven-sh/setup-bun` to a full commit SHA for stronger supply-chain safety.
+- README now uses the compatible `@v0.2` tag instead of `@main`, and includes compatibility, troubleshooting, and versioning guidance.
+- Review execution and GitHub posting now settle per lane so successful code, security, or policy reviews are preserved when another lane fails.
+- Hardened repository skill-path validation against traversal, sibling-prefix escapes, symlinks, directories, and oversized files.
+- Updated the dogfood workflow to the Node 24-compatible `actions/checkout@v7` release and pinned its immutable commit SHA.
+
+### Security
+
+- Fork-owned policy prompts are skipped without disabling code/security review; the tracking comment explains the skip.
+
+## [0.2.0-beta.3] — 2026-05-28
+
+### Added
+
+- Added repository benchmarking and bot-latency scripts for comparing review models and measuring end-to-end response time.
+- Added prompt regression coverage for the required `submit_review` tool contract.
+
+### Fixed
+
+- Removed contradictory prompt wording that could prevent review agents from calling `submit_review`.
+- Kept dogfood review runs isolated across pull-request and comment events so unrelated comments cannot cancel an in-flight review.
+
+### Changed
+
+- Recommended the moving `v0.2` action tag and preserved exact prerelease tags for reproducible workflows.
+
+## [0.2.0-beta.2] — 2026-05-15
+
+### Fixed
+
+- Retry review-agent runs that finish without calling `submit_review`, reducing intermittent security/code review failures caused by missed final submit-tool calls.
+
+## [0.2.0-beta.1] — 2026-05-14
+
+### Fixed
+
+- Stopped the enkii GitHub workflow from self-canceling on PR runs.
+
+## [0.1.2] — 2026-05-06
+
+### Fixed
+
+- Added retries around transient GitHub PR review creation failures so posting review results is less likely to fail on brief provider/API hiccups.
+
+## [0.1.1] — 2026-05-06
+
+### Changed
+
+- Prefixed runtime tool logs by review kind so code-review and security-review traces are easier to distinguish in action logs.
+
+## [0.1.0-alpha.8] — 2026-05-05
+
+### Changed
+
+- Removed the redundant summary-heading test assertion added in alpha.7.
+
+## [0.1.0-alpha.7] — 2026-05-05
+
+### Changed
+
+- Review body headings now use `Summary` instead of `enkii Summary`.
+
+## [0.1.0-alpha.6] — 2026-05-05
+
+### Fixed
+
+- Manual PR commands from issue comments now fetch and check out the current PR head SHA before review, so file reads inspect the branch under review instead of the base branch.
+- PR diffs are now generated from GitHub's PR diff endpoint when PR metadata is available, avoiding empty diffs caused by `issue_comment` checkout context.
+- Added a `gh pr diff --repo owner/repo` fallback if the GitHub diff API is unavailable.
+
+## [0.1.0-alpha.5] — 2026-05-05
+
+### Fixed
+
+- Prevented GitHub `422 Line could not be resolved` failures from invalid inline anchors by checking candidate comments against the PR patch before posting.
+- Comments that cannot be anchored to changed diff lines are now preserved under an `Unanchored notes` section in the review summary.
+- Added a summary-only retry when GitHub still rejects inline review comments for line-resolution reasons.
+
+## [0.1.0-alpha.4] — 2026-05-05
+
+### Changed
+
+- Switched the embedded Pi runtime to Pi's SDK read-only tools (`read`, `grep`, `find`, `ls`) via `@mariozechner/pi-coding-agent`.
+- Removed enkii's duplicate local `read_file`, `grep`, `list_files`, and path-guard tool implementations.
+- Updated review, security, benchmark, and validator prompts to use Pi's native read-only tool names and offset/limit chunking.
+
+### Fixed
+
+- Incomplete reviews that cannot inspect the PR diff now receive `Mergeability Score: 1/5` with manual-review guidance instead of being treated as safe to merge.
+
+## [0.1.0-alpha.3] — 2026-05-05
+
+### Added
+
+- Added `@enkii /benchmark` to run a fresh code review without passing existing PR comments to the model, intended for replay benchmarks against older PRs.
+- Added Greptile-style review summaries with a mechanical Mergeability Score and colored severity badges for inline findings.
+
+### Changed
+
+- Code and security reviews can run in parallel for automatic PR events.
+- Review summaries now include merge guidance while leaving the numeric score to the post step.
+
+## [0.1.0-alpha.2] — 2026-05-05
+
+### Changed
+
+- Replaced the Codex CLI runtime with embedded `@mariozechner/pi-agent-core` and `@mariozechner/pi-ai` on OpenRouter.
+- Pass 1 and Pass 2 now use submit tools (`submit_review`, `submit_validation`) for structured output instead of parsing Codex final messages.
+- Removed the GitHub Action's Node/Codex install step; setup now installs Bun dependencies and runs enkii directly.
+- Single-pass review remains the default. The Pass 2 validator remains available behind `enable_validator`.
+
+### Removed
+
+- Removed the abandoned Docker image workflow and Docker files from the alpha.2 pivot.
+
+## [0.1.0-alpha.1] — 2026-05-01
+
+First end-to-end alpha. Code-complete on the v0.1 plan; not yet validated against real PRs (that happens next during docsyde / external-corpus testing).
+
+### Added
+
+- **GitHub Action manifest** (`action.yml`) with 8 inputs:
+  - `openrouter_api_key` (required)
+  - `github_token` (defaults to `${{ github.token }}`)
+  - `review_model` / `security_model` (default `@preset/enkii`, override with any OpenRouter model id)
+  - `review_skill_path` / `security_skill_path` (override the bundled methodology with a custom markdown file)
+  - `exclude_paths` / `max_files` (TODO: wire these into the runtime; declared but not yet enforced)
+  - `skip_drafts` (TODO: same)
+- **Triggers**:
+  - `pull_request: [opened, synchronize, reopened]` → automatic code review
+  - `@enkii /review` → re-run code review
+  - `@enkii /security` → run a separate security review (its own PR Review thread)
+  - `@enkii help` / `@enkii status` / `@enkii` (alone) → mechanical help reply (non-LLM)
+- **Two-pass review architecture** (Pass 1 candidates → Pass 2 validator) for both code review and security review. Validator re-checks each candidate before the post step submits.
+- **Codex CLI runtime** invoked with `--sandbox read-only`, `--ignore-user-config`, and inline `-c` overrides for OpenRouter provider config. No reliance on the consumer's local `~/.codex/config.toml`.
+- **Bundled skills** (`skills/review.md` + `skills/security-review.md`) — minimal v0.1 baselines covering severity rubric, anti-noise rules, and "verify the specific repro before posting" guidance. Iteration against real PRs happens post-launch.
+- **Skill loader** (`src/skills/loader.ts`) supporting bundled defaults + consumer overrides via `review_skill_path`. Fork-safe: refuses overrides loaded from a fork PR's HEAD (uses bundled instead) since fork-controlled prompts run with the consumer's secrets and would otherwise be an exfil vector.
+- **Non-LLM post step** that submits a single batched PR Review via octokit, capping inline comments at 20 (spillover summarized in the review body).
+
+### Architecture & infrastructure
+
+- GitHub plumbing borrowed from `Factory-AI/droid-action` (MIT) — see `NOTICE` for attribution. Token resolution (`src/github/token.ts`) and tag dispatch (`src/tag/index.ts`) rewritten with borrowed logic since the upstream versions assumed Factory-specific OIDC + bot identity.
+- Codex's hardcoded ~10K-token system prompt is amortized via OpenRouter prompt caching when consumers route through a preset that pins providers (recommended in the README).
+
+### Known limitations
+
+- **Default skills are minimal v0.1 baselines.** Output quality on real PRs is unknown until the docsyde benchmark phase.
+- `exclude_paths` / `max_files` / `skip_drafts` inputs are declared in `action.yml` but not yet enforced in the runtime. Land in a follow-up commit before `v0.1.0` (non-alpha).
+- No real-PR benchmark numbers yet. Phase 6 of the v0.1 plan covers that.
+- Latency is 5–15 minutes per pass on a real PR (so 10–30 minutes for the full two-pass review). Acceptable for a side project, slow vs commercial competitors.
+
+### Internal
+
+- 18 commits in the v0.1.0-alpha.1 stack on `main`. Repo published at https://github.com/Timmyy3000/enkii.
+- `bun run typecheck` passes.
+
+[0.1.0-alpha.8]: https://github.com/Timmyy3000/enkii/releases/tag/v0.1.0-alpha.8
+[0.1.0-alpha.7]: https://github.com/Timmyy3000/enkii/releases/tag/v0.1.0-alpha.7
+[0.1.0-alpha.6]: https://github.com/Timmyy3000/enkii/releases/tag/v0.1.0-alpha.6
+[0.1.0-alpha.5]: https://github.com/Timmyy3000/enkii/releases/tag/v0.1.0-alpha.5
+[0.1.0-alpha.4]: https://github.com/Timmyy3000/enkii/releases/tag/v0.1.0-alpha.4
+[0.1.0-alpha.3]: https://github.com/Timmyy3000/enkii/releases/tag/v0.1.0-alpha.3
+[0.1.0-alpha.2]: https://github.com/Timmyy3000/enkii/releases/tag/v0.1.0-alpha.2
+[0.1.0-alpha.1]: https://github.com/Timmyy3000/enkii/releases/tag/v0.1.0-alpha.1
+[0.1.1]: https://github.com/Timmyy3000/enkii/releases/tag/v0.1.1
+[0.1.2]: https://github.com/Timmyy3000/enkii/releases/tag/v0.1.2
+[0.2.0-beta.1]: https://github.com/Timmyy3000/enkii/releases/tag/v0.2.0-beta.1
+[0.2.0-beta.2]: https://github.com/Timmyy3000/enkii/releases/tag/v0.2.0-beta.2
+[0.2.0-beta.3]: https://github.com/Timmyy3000/enkii/releases/tag/v0.2.0-beta.3
+[0.2.0-beta.4]: https://github.com/Timmyy3000/enkii/releases/tag/v0.2.0-beta.4
+[0.2.0-beta.5]: https://github.com/Timmyy3000/enkii/releases/tag/v0.2.0-beta.5
+[0.2.0-beta.6]: https://github.com/Timmyy3000/enkii/releases/tag/v0.2.0-beta.6
