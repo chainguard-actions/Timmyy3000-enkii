@@ -16,25 +16,19 @@ Action **Timmyy3000--enkii/v0.2.0-beta.3** was hardened automatically. 3 finding
 
 ### script-injection (severity: high)
 
-Sub-rule (a): A ${{ }} expression is directly interpolated inside a `run:` shell command string. The step 'Mask OpenRouter API key' uses `echo "::add-mask::${{ inputs.openrouter_api_key }}"` — the `inputs.openrouter_api_key` value is expanded by the GitHub Actions template engine before the shell ever sees it, allowing an attacker-controlled value to inject shell metacharacters. The value should be passed via an `env:` variable and referenced as `$ENV_VAR` inside the script instead.
+Sub-rule (a): A ${{ }} expression is directly interpolated inside a run: shell command string. In the 'Mask OpenRouter API key' step, the line `run: echo "::add-mask::${{ inputs.openrouter_api_key }}"` embeds the user-supplied input directly into the shell command before the shell ever sees it. An attacker who controls the value of `inputs.openrouter_api_key` (e.g. via a workflow_dispatch or a calling workflow) could inject arbitrary shell commands. The value should be passed via an env: variable and referenced as `$ENV_VAR` instead.
 
 Locations:
 
-- `action.yml:60`
+- `action.yml:63`
 
 ### unpinned-uses (severity: high)
 
-One or more `uses:` references are pinned to mutable tags rather than immutable 40-character commit SHAs, making the action vulnerable to supply-chain attacks if the tag is moved or overwritten.
-
-- `action.yml`: `uses: oven-sh/setup-bun@v2` — `v2` is a mutable tag.
-- `.github/workflows/enkii-review.yml`: `uses: actions/checkout@v4` — `v4` is a mutable tag.
-
-Each should be pinned to a full SHA, e.g. `actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4`.
+The action uses `oven-sh/setup-bun@v2`, which is pinned to a mutable tag (`@v2`) rather than an immutable 40-character commit SHA. A tag can be moved to point to a different (potentially malicious) commit at any time, enabling a supply-chain attack. It should be replaced with a full SHA pin, e.g. `oven-sh/setup-bun@<40-char-sha> # v2`.
 
 Locations:
 
-- `action.yml:64`
-- `.github/workflows/enkii-review.yml:22`
+- `action.yml:67`
 
 ### static-inline-injection (severity: high)
 
@@ -52,5 +46,5 @@ Locations:
 
 **Notes:**
 
-Fixed three findings in hardened/action/: (1) Script injection in 'Mask OpenRouter API key' step — moved `${{ inputs.openrouter_api_key }}` out of the run: shell string into an env: variable and referenced it as `$OPENROUTER_API_KEY`; (2) Pinned `oven-sh/setup-bun@v2` to SHA `0c5077e51419868618aeaa5fe8019c62421857d6` in action.yml; (3) Pinned `actions/checkout@v4` to SHA `34e114876b0b11c390a56381ad16ebd13914f8d5` in .github/workflows/enkii-review.yml.
+Fixed two issues in hardened/action/action.yml: (1) Moved `${{ inputs.openrouter_api_key }}` out of the 'Mask OpenRouter API key' run: shell string and into an env: block, referencing it as `$OPENROUTER_API_KEY` to prevent script injection. (2) Pinned `oven-sh/setup-bun@v2` to its full immutable commit SHA `oven-sh/setup-bun@0c5077e51419868618aeaa5fe8019c62421857d6 # v2`.
 
