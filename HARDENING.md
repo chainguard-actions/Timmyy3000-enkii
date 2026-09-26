@@ -10,33 +10,17 @@
 
 **Harden Agent Version:** `2`
 
-Action **Timmyy3000--enkii/v0.2.0-beta.5** was hardened automatically. 3 finding(s) were identified and resolved across 1 iteration(s).
+Action **Timmyy3000--enkii/v0.2.0-beta.5** was hardened automatically. 2 finding(s) were identified and resolved across 1 iteration(s).
 
 ## Findings Fixed
 
 ### script-injection (severity: high)
 
-Rule (a) violation: The 'Mask OpenRouter API key' step in action.yml directly interpolates `${{ inputs.openrouter_api_key }}` inside a `run:` shell command string: `echo "::add-mask::${{ inputs.openrouter_api_key }}"`.
-
-GitHub Actions performs YAML template substitution before the shell ever sees the string, so a crafted value for `inputs.openrouter_api_key` (e.g. containing newlines, semicolons, or command substitution syntax) could inject arbitrary shell commands. The value should be passed via an `env:` variable and referenced as `$ENV_VAR` in the shell instead:
-
-```yaml
-env:
-  OR_KEY: ${{ inputs.openrouter_api_key }}
-run: echo "::add-mask::$OR_KEY"
-```
+Sub-rule (a): A ${{ }} expression is directly interpolated inside a run: shell command string. In the 'Mask OpenRouter API key' step, `run: echo "::add-mask::${{ inputs.openrouter_api_key }}"` substitutes the value of inputs.openrouter_api_key directly into the shell command before the shell processes it. An attacker who controls this input (e.g. via workflow_dispatch or a calling workflow) could inject shell metacharacters. The value should be passed via an env: variable and referenced as a quoted shell variable instead.
 
 Locations:
 
-- `action.yml:76`
-
-### unpinned-uses (severity: high)
-
-The workflow file ci.yml references `actions/checkout@v4`, which uses a mutable tag rather than a full 40-character commit SHA. A mutable tag can be silently moved to point to a different (potentially malicious) commit, enabling a supply-chain attack. Replace with a pinned SHA, e.g. `actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4`.
-
-Locations:
-
-- `.github/workflows/ci.yml:16`
+- `action.yml:68`
 
 ### static-inline-injection (severity: high)
 
@@ -50,9 +34,9 @@ Locations:
 
 ### Iteration 1
 
-**Fixes applied:** script-injection, static-inline-injection, unpinned-uses
+**Fixes applied:** script-injection, static-inline-injection
 
 **Notes:**
 
-1. Fixed script-injection and static-inline-injection in hardened/action/action.yml: moved `${{ inputs.openrouter_api_key }}` out of the `run:` shell string in the 'Mask OpenRouter API key' step into an `env:` block as `OR_KEY`, then referenced it as `$OR_KEY` in the shell command. 2. Fixed unpinned-uses in hardened/action/.github/workflows/ci.yml: replaced `actions/checkout@v4` with the pinned SHA `actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4`.
+Fixed the script injection vulnerability in the 'Mask OpenRouter API key' step in hardened/action/action.yml. The ${{ inputs.openrouter_api_key }} expression was moved from the run: shell command string into an env: block as OPENROUTER_API_KEY, and the run: command now references it as the shell variable $OPENROUTER_API_KEY. This prevents attacker-controlled input from being interpreted as shell metacharacters.
 
