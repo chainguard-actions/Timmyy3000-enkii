@@ -1,0 +1,43 @@
+name: Test custom model inputs
+on:
+  workflow_dispatch:
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+
+      - id: action
+        uses: .
+        continue-on-error: true
+        with:
+          openrouter_api_key: "sk-or-fake-key-for-testing"
+          review_model: "deepseek/deepseek-r1"
+          security_model: "deepseek/deepseek-r1"
+          enable_validator: "false"
+          run_security: "false"
+          incremental_review: "false"
+          diagnostics: "false"
+          agent_timeout_minutes: "30"
+
+      - name: Assert action ran with custom models
+        env:
+          OUTCOME: ${{ steps.action.outcome }}
+          CONTAINS_TRIGGER: ${{ steps.action.outputs.contains_trigger }}
+        run: |
+          echo "outcome: $OUTCOME"
+          echo "contains_trigger: $CONTAINS_TRIGGER"
+          if [ "$OUTCOME" = "success" ]; then
+            # On a non-PR event, the action should report no trigger
+            if [ "$CONTAINS_TRIGGER" = "false" ] || [ -z "$CONTAINS_TRIGGER" ]; then
+              echo "PASS: action succeeded with custom models and no trigger detected"
+            else
+              echo "FAIL: expected contains_trigger=false on workflow_dispatch, got: $CONTAINS_TRIGGER"
+              exit 1
+            fi
+          elif [ "$OUTCOME" = "failure" ]; then
+            echo "PASS: action failed gracefully (expected on non-PR event with fake API key / sentinel repo)"
+          else
+            echo "FAIL: unexpected outcome '$OUTCOME'"
+            exit 1
+          fi

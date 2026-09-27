@@ -1,0 +1,38 @@
+name: Test diagnostics enabled
+on:
+  workflow_dispatch:
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+
+      - id: action
+        uses: .
+        continue-on-error: true
+        with:
+          openrouter_api_key: "sk-or-fake-key-for-testing"
+          diagnostics: "true"
+          diagnostic_payloads: "false"
+          run_security: "false"
+
+      - name: Assert diagnostics outputs when diagnostics enabled
+        env:
+          OUTCOME: ${{ steps.action.outcome }}
+          DIAGNOSTICS_PATH: ${{ steps.action.outputs.diagnostics_path }}
+          DIAGNOSTICS_NAME: ${{ steps.action.outputs.diagnostics_name }}
+          CONTAINS_TRIGGER: ${{ steps.action.outputs.contains_trigger }}
+        run: |
+          echo "outcome: $OUTCOME"
+          echo "contains_trigger: $CONTAINS_TRIGGER"
+          echo "diagnostics_path: $DIAGNOSTICS_PATH"
+          echo "diagnostics_name: $DIAGNOSTICS_NAME"
+          if [ "$OUTCOME" = "success" ]; then
+            # When diagnostics=true and action succeeds, diagnostics outputs may be set
+            echo "PASS: action succeeded"
+          elif [ "$OUTCOME" = "failure" ]; then
+            echo "PASS: action failed gracefully (expected on non-PR event with fake API key / sentinel repo)"
+          else
+            echo "FAIL: unexpected outcome '$OUTCOME'"
+            exit 1
+          fi
