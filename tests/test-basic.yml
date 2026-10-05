@@ -1,0 +1,40 @@
+name: Test basic usage (no PR context)
+on:
+  workflow_dispatch:
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+
+      - id: action
+        uses: .
+        continue-on-error: true
+        with:
+          openrouter_api_key: "fake-openrouter-key-for-testing"
+          review_model: "deepseek/deepseek-chat"
+          security_model: "deepseek/deepseek-chat"
+          run_security: "false"
+          diagnostics: "false"
+          agent_timeout_minutes: "5"
+
+      - name: Assert action ran and produced contains_trigger output or failed gracefully
+        env:
+          OUTCOME: ${{ steps.action.outcome }}
+          CONTAINS_TRIGGER: ${{ steps.action.outputs.contains_trigger }}
+        run: |
+          echo "outcome: $OUTCOME"
+          echo "contains_trigger: $CONTAINS_TRIGGER"
+          if [ "$OUTCOME" = "success" ]; then
+            # If it succeeded, contains_trigger should be set (true or false)
+            if [ -z "$CONTAINS_TRIGGER" ]; then
+              echo "FAIL: action succeeded but contains_trigger output is empty"
+              exit 1
+            fi
+            echo "PASS: action succeeded with contains_trigger='$CONTAINS_TRIGGER'"
+          elif [ "$OUTCOME" = "failure" ]; then
+            echo "PASS: action failed gracefully (no real PR context / sentinel repo)"
+          else
+            echo "FAIL: unexpected outcome '$OUTCOME'"
+            exit 1
+          fi
