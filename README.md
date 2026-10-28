@@ -20,6 +20,7 @@ Hardened by [Chainguard](https://www.chainguard.dev) from the upstream action at
 | v1.3.0 | [`v1.3.0`](https://github.com/chainguard-actions/Timmyy3000-enkii/tree/v1.3.0) | [`1ce1ee8`](https://github.com/Timmyy3000/enkii/commit/1ce1ee8e2810d392f674c20e0b5f911a7737b212) | [`HARDENING.md`](https://github.com/chainguard-actions/Timmyy3000-enkii/blob/v1.3.0/HARDENING.md) |
 | v1.3.1 | [`v1.3.1`](https://github.com/chainguard-actions/Timmyy3000-enkii/tree/v1.3.1) | [`a56dd03`](https://github.com/Timmyy3000/enkii/commit/a56dd0363a0514e3e9ec2e57a259fbb3d5c55ea8) | [`HARDENING.md`](https://github.com/chainguard-actions/Timmyy3000-enkii/blob/v1.3.1/HARDENING.md) |
 | v1.3.2 | [`v1.3.2`](https://github.com/chainguard-actions/Timmyy3000-enkii/tree/v1.3.2) | [`040d703`](https://github.com/Timmyy3000/enkii/commit/040d7033ab44c4a97e9b6d29cc1ecadf151db282) | [`HARDENING.md`](https://github.com/chainguard-actions/Timmyy3000-enkii/blob/v1.3.2/HARDENING.md) |
+| v1.4.1 | [`v1.4.1`](https://github.com/chainguard-actions/Timmyy3000-enkii/tree/v1.4.1) | [`466d675`](https://github.com/Timmyy3000/enkii/commit/466d675baa55bc3a8b0fea823d5f007be6e05552) | [`HARDENING.md`](https://github.com/chainguard-actions/Timmyy3000-enkii/blob/v1.4.1/HARDENING.md) |
 
 ## Privacy
 
