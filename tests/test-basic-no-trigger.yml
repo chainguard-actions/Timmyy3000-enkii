@@ -1,0 +1,60 @@
+name: Test basic usage (workflow_dispatch is not a trigger)
+on:
+  workflow_dispatch:
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+      - id: action
+        uses: .
+        env:
+          ENKII_USAGE_REPORTING: "false"
+        with:
+          openrouter_api_key: sk-or-test-not-a-real-key
+      - name: Assert contains_trigger is false
+        env:
+          ACTUAL: ${{ steps.action.outputs.contains_trigger }}
+        run: |
+          echo "actual: $ACTUAL"
+          if [ "$ACTUAL" != "false" ]; then
+            echo "FAIL: expected contains_trigger 'false'"
+            exit 1
+          fi
+          echo "PASS"
+      - name: Assert no reviews were posted
+        env:
+          CODE: ${{ steps.action.outputs.code_review_id }}
+          SEC: ${{ steps.action.outputs.security_review_id }}
+          POL: ${{ steps.action.outputs.policy_review_id }}
+        run: |
+          echo "code='$CODE' security='$SEC' policy='$POL'"
+          if [ -n "$CODE$SEC$POL" ]; then
+            echo "FAIL: expected no review ids"
+            exit 1
+          fi
+          echo "PASS"
+      - name: Assert diagnostics outputs
+        env:
+          DPATH: ${{ steps.action.outputs.diagnostics_path }}
+          DNAME: ${{ steps.action.outputs.diagnostics_name }}
+        run: |
+          echo "path: $DPATH"
+          echo "name: $DNAME"
+          if [ -z "$DPATH" ] || [ -z "$DNAME" ]; then
+            echo "FAIL: diagnostics outputs should be set"
+            exit 1
+          fi
+          if [ "$(basename "$DPATH")" != "$DNAME" ]; then
+            echo "FAIL: diagnostics_name should be basename of diagnostics_path"
+            exit 1
+          fi
+          case "$DNAME" in
+            enkii-diagnostics-*) ;;
+            *) echo "FAIL: unexpected diagnostics name"; exit 1 ;;
+          esac
+          if [ ! -d "$DPATH" ]; then
+            echo "FAIL: diagnostics directory does not exist"
+            exit 1
+          fi
+          echo "PASS"
