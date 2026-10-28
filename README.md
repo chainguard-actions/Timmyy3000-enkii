@@ -6,20 +6,20 @@ Hardened by [Chainguard](https://www.chainguard.dev) from the upstream action at
 
 ## Versions
 
-| Version | Tag | Upstream commit |
-|---------|-----|-----------------|
-| v0.2.0-beta.1 | [`v0.2.0-beta.1`](https://github.com/chainguard-actions/Timmyy3000-enkii/tree/v0.2.0-beta.1) | [`6543334`](https://github.com/Timmyy3000/enkii/commit/654333406da6b4ce683c71f9b44dd89ee84ff83b) |
-| v0.2.0-beta.2 | [`v0.2.0-beta.2`](https://github.com/chainguard-actions/Timmyy3000-enkii/tree/v0.2.0-beta.2) | [`7b65b29`](https://github.com/Timmyy3000/enkii/commit/7b65b29deb6297fb7a387c92b8ab7f0f857633e7) |
-| v0.2.0-beta.3 | [`v0.2.0-beta.3`](https://github.com/chainguard-actions/Timmyy3000-enkii/tree/v0.2.0-beta.3) | [`bd10e57`](https://github.com/Timmyy3000/enkii/commit/bd10e57e9bddc7d4993c41dd2b82e636c585cf9b) |
-| v0.2.0-beta.4 | [`v0.2.0-beta.4`](https://github.com/chainguard-actions/Timmyy3000-enkii/tree/v0.2.0-beta.4) | [`3028404`](https://github.com/Timmyy3000/enkii/commit/3028404cff2f060cba69e8543e39835deddcea0b) |
-| v0.2.0-beta.5 | [`v0.2.0-beta.5`](https://github.com/chainguard-actions/Timmyy3000-enkii/tree/v0.2.0-beta.5) | [`b7c4395`](https://github.com/Timmyy3000/enkii/commit/b7c43955489940fd809df72c22b413484f5c265e) |
-| v0.2.0-beta.6 | [`v0.2.0-beta.6`](https://github.com/chainguard-actions/Timmyy3000-enkii/tree/v0.2.0-beta.6) | [`ce39c66`](https://github.com/Timmyy3000/enkii/commit/ce39c661094b3859a2d45de83c3b330a750857a3) |
-| v1.0.0 | [`v1.0.0`](https://github.com/chainguard-actions/Timmyy3000-enkii/tree/v1.0.0) | [`39dec24`](https://github.com/Timmyy3000/enkii/commit/39dec2413ab40a44d84faf9e05b06c0d5ade1fe6) |
-| v1.1.0 | [`v1.1.0`](https://github.com/chainguard-actions/Timmyy3000-enkii/tree/v1.1.0) | [`5532fe3`](https://github.com/Timmyy3000/enkii/commit/5532fe3b94ea980e435022b51530ea34fb9d16d6) |
-| v1.2.0 | [`v1.2.0`](https://github.com/chainguard-actions/Timmyy3000-enkii/tree/v1.2.0) | [`c130de2`](https://github.com/Timmyy3000/enkii/commit/c130de2a4d5d872ad0bcfa8bb9b1653b9f0c216c) |
-| v1.3.0 | [`v1.3.0`](https://github.com/chainguard-actions/Timmyy3000-enkii/tree/v1.3.0) | [`1ce1ee8`](https://github.com/Timmyy3000/enkii/commit/1ce1ee8e2810d392f674c20e0b5f911a7737b212) |
-| v1.3.1 | [`v1.3.1`](https://github.com/chainguard-actions/Timmyy3000-enkii/tree/v1.3.1) | [`a56dd03`](https://github.com/Timmyy3000/enkii/commit/a56dd0363a0514e3e9ec2e57a259fbb3d5c55ea8) |
-| v1.3.2 | [`v1.3.2`](https://github.com/chainguard-actions/Timmyy3000-enkii/tree/v1.3.2) | [`040d703`](https://github.com/Timmyy3000/enkii/commit/040d7033ab44c4a97e9b6d29cc1ecadf151db282) |
+| Version | Tag | Upstream commit | Hardening report |
+|---------|-----|-----------------|------------------|
+| v0.2.0-beta.1 | [`v0.2.0-beta.1`](https://github.com/chainguard-actions/Timmyy3000-enkii/tree/v0.2.0-beta.1) | [`6543334`](https://github.com/Timmyy3000/enkii/commit/654333406da6b4ce683c71f9b44dd89ee84ff83b) | [`HARDENING.md`](https://github.com/chainguard-actions/Timmyy3000-enkii/blob/v0.2.0-beta.1/HARDENING.md) |
+| v0.2.0-beta.2 | [`v0.2.0-beta.2`](https://github.com/chainguard-actions/Timmyy3000-enkii/tree/v0.2.0-beta.2) | [`7b65b29`](https://github.com/Timmyy3000/enkii/commit/7b65b29deb6297fb7a387c92b8ab7f0f857633e7) | [`HARDENING.md`](https://github.com/chainguard-actions/Timmyy3000-enkii/blob/v0.2.0-beta.2/HARDENING.md) |
+| v0.2.0-beta.3 | [`v0.2.0-beta.3`](https://github.com/chainguard-actions/Timmyy3000-enkii/tree/v0.2.0-beta.3) | [`bd10e57`](https://github.com/Timmyy3000/enkii/commit/bd10e57e9bddc7d4993c41dd2b82e636c585cf9b) | [`HARDENING.md`](https://github.com/chainguard-actions/Timmyy3000-enkii/blob/v0.2.0-beta.3/HARDENING.md) |
+| v0.2.0-beta.4 | [`v0.2.0-beta.4`](https://github.com/chainguard-actions/Timmyy3000-enkii/tree/v0.2.0-beta.4) | [`3028404`](https://github.com/Timmyy3000/enkii/commit/3028404cff2f060cba69e8543e39835deddcea0b) | [`HARDENING.md`](https://github.com/chainguard-actions/Timmyy3000-enkii/blob/v0.2.0-beta.4/HARDENING.md) |
+| v0.2.0-beta.5 | [`v0.2.0-beta.5`](https://github.com/chainguard-actions/Timmyy3000-enkii/tree/v0.2.0-beta.5) | [`b7c4395`](https://github.com/Timmyy3000/enkii/commit/b7c43955489940fd809df72c22b413484f5c265e) | [`HARDENING.md`](https://github.com/chainguard-actions/Timmyy3000-enkii/blob/v0.2.0-beta.5/HARDENING.md) |
+| v0.2.0-beta.6 | [`v0.2.0-beta.6`](https://github.com/chainguard-actions/Timmyy3000-enkii/tree/v0.2.0-beta.6) | [`ce39c66`](https://github.com/Timmyy3000/enkii/commit/ce39c661094b3859a2d45de83c3b330a750857a3) | [`HARDENING.md`](https://github.com/chainguard-actions/Timmyy3000-enkii/blob/v0.2.0-beta.6/HARDENING.md) |
+| v1.0.0 | [`v1.0.0`](https://github.com/chainguard-actions/Timmyy3000-enkii/tree/v1.0.0) | [`39dec24`](https://github.com/Timmyy3000/enkii/commit/39dec2413ab40a44d84faf9e05b06c0d5ade1fe6) | [`HARDENING.md`](https://github.com/chainguard-actions/Timmyy3000-enkii/blob/v1.0.0/HARDENING.md) |
+| v1.1.0 | [`v1.1.0`](https://github.com/chainguard-actions/Timmyy3000-enkii/tree/v1.1.0) | [`5532fe3`](https://github.com/Timmyy3000/enkii/commit/5532fe3b94ea980e435022b51530ea34fb9d16d6) | [`HARDENING.md`](https://github.com/chainguard-actions/Timmyy3000-enkii/blob/v1.1.0/HARDENING.md) |
+| v1.2.0 | [`v1.2.0`](https://github.com/chainguard-actions/Timmyy3000-enkii/tree/v1.2.0) | [`c130de2`](https://github.com/Timmyy3000/enkii/commit/c130de2a4d5d872ad0bcfa8bb9b1653b9f0c216c) | [`HARDENING.md`](https://github.com/chainguard-actions/Timmyy3000-enkii/blob/v1.2.0/HARDENING.md) |
+| v1.3.0 | [`v1.3.0`](https://github.com/chainguard-actions/Timmyy3000-enkii/tree/v1.3.0) | [`1ce1ee8`](https://github.com/Timmyy3000/enkii/commit/1ce1ee8e2810d392f674c20e0b5f911a7737b212) | [`HARDENING.md`](https://github.com/chainguard-actions/Timmyy3000-enkii/blob/v1.3.0/HARDENING.md) |
+| v1.3.1 | [`v1.3.1`](https://github.com/chainguard-actions/Timmyy3000-enkii/tree/v1.3.1) | [`a56dd03`](https://github.com/Timmyy3000/enkii/commit/a56dd0363a0514e3e9ec2e57a259fbb3d5c55ea8) | [`HARDENING.md`](https://github.com/chainguard-actions/Timmyy3000-enkii/blob/v1.3.1/HARDENING.md) |
+| v1.3.2 | [`v1.3.2`](https://github.com/chainguard-actions/Timmyy3000-enkii/tree/v1.3.2) | [`040d703`](https://github.com/Timmyy3000/enkii/commit/040d7033ab44c4a97e9b6d29cc1ecadf151db282) | [`HARDENING.md`](https://github.com/chainguard-actions/Timmyy3000-enkii/blob/v1.3.2/HARDENING.md) |
 
 ## Privacy
 
