@@ -1,0 +1,33 @@
+name: Test diagnostics disabled
+on:
+  workflow_dispatch:
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    env:
+      ENKII_USAGE_REPORTING: "false"
+    steps:
+      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+      - id: action
+        uses: .
+        with:
+          openrouter_api_key: sk-or-test-placeholder-key
+          diagnostics: "false"
+      - name: Assert diagnostics outputs are empty and trigger false
+        env:
+          TRIGGER: ${{ steps.action.outputs.contains_trigger }}
+          DPATH: ${{ steps.action.outputs.diagnostics_path }}
+          DNAME: ${{ steps.action.outputs.diagnostics_name }}
+        run: |
+          echo "contains_trigger: $TRIGGER"
+          echo "diagnostics_path: $DPATH"
+          echo "diagnostics_name: $DNAME"
+          if [ "$TRIGGER" != "false" ]; then
+            echo "FAIL: expected contains_trigger 'false'"
+            exit 1
+          fi
+          if [ -n "$DPATH" ] || [ -n "$DNAME" ]; then
+            echo "FAIL: expected empty diagnostics outputs"
+            exit 1
+          fi
+          echo "PASS"
